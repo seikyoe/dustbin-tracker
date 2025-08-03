@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps API Test</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps API Test</h1>
+    <div id="status"></div>
+    <div id="map"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function showStatus(message, isError = false) {
+            statusDiv.innerHTML = `<div class="status ${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        function initMap() {
+            try {
+                const map = new google.maps.Map(document.getElementById('map'), {
+                    center: { lat: 40.7128, lng: -74.006 }, // NYC
+                    zoom: 13,
+                });
+                
+                // Add a marker to test
+                new google.maps.Marker({
+                    position: { lat: 40.7128, lng: -74.006 },
+                    map: map,
+                    title: 'Test Marker'
+                });
+                
+                showStatus('✅ Google Maps API is working correctly! Map loaded successfully.');
+                console.log('Google Maps loaded successfully');
+            } catch (error) {
+                showStatus(`❌ Error initializing map: ${error.message}`, true);
+                console.error('Error initializing map:', error);
+            }
+        }
+
+        function loadGoogleMaps() {
+            showStatus('🔄 Loading Google Maps API...');
+            
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDzep9Vx5ujii94g10cHt6nkdF_fRupFNs&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            
+            script.onerror = () => {
+                showStatus('❌ Failed to load Google Maps API script', true);
+            };
+            
+            document.head.appendChild(script);
+            
+            // Timeout fallback
+            setTimeout(() => {
+                if (!window.google || !window.google.maps) {
+                    showStatus('❌ Google Maps failed to load within timeout period', true);
+                }
+            }, 10000);
+        }
+
+        // Start loading
+        loadGoogleMaps();
+    </script>
+</body>
+</html> 

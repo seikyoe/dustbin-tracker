@@ -386,9 +386,9 @@ export default function DustbinTracker() {
         existingScript.remove()
       }
 
-      // Create script element with a working approach
+      // Create script element with proper error handling
       const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places&callback=initGoogleMap`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDzep9Vx5ujii94g10cHt6nkdF_fRupFNs&callback=initMap`
       script.async = true
       script.defer = true
 
@@ -406,6 +406,12 @@ export default function DustbinTracker() {
           description: "Using fallback map view",
         })
         setMap("fallback")
+      }
+
+      // Handle script load success
+      script.onload = () => {
+        console.log("Google Maps script loaded")
+        // The callback will be called automatically
       }
 
       // Add script to document
@@ -587,7 +593,7 @@ export default function DustbinTracker() {
 
   const getFilteredBins = () => {
     if (activeTab === "all") return dustbins
-    return dustbins.filter((bin) => bin.type === activeTab)
+    return dustbins.filter((bin: Dustbin) => bin.type === activeTab)
   }
 
   const getBinIcon = (bin: Dustbin) => {
@@ -656,8 +662,8 @@ export default function DustbinTracker() {
     setIsAddingBin(false)
     hapticFeedback("medium")
 
-    setLeaderboard((prev) =>
-      prev.map((user) =>
+    setLeaderboard((prev: LeaderboardUser[]) =>
+      prev.map((user: LeaderboardUser) =>
         user.name === "You"
           ? { ...user, points: user.points + 50, binsReported: user.binsReported + 1, earnings: user.earnings + 5.0 }
           : user,
@@ -672,15 +678,15 @@ export default function DustbinTracker() {
 
   const handleStatusUpdate = (binId: string, newStatus: string) => {
     setDustbins(
-      dustbins.map((bin) =>
+      dustbins.map((bin: Dustbin) =>
         bin.id === binId ? { ...bin, status: newStatus as any, lastUpdated: new Date(), reportedBy: "You" } : bin,
       ),
     )
     setSelectedBin(null)
     hapticFeedback("medium")
 
-    setLeaderboard((prev) =>
-      prev.map((user) =>
+    setLeaderboard((prev: LeaderboardUser[]) =>
+      prev.map((user: LeaderboardUser) =>
         user.name === "You"
           ? { ...user, points: user.points + 10, statusUpdates: user.statusUpdates + 1, earnings: user.earnings + 1.0 }
           : user,
@@ -694,15 +700,15 @@ export default function DustbinTracker() {
   }
 
   const handleTaskComplete = (taskId: string) => {
-    const task = tasks.find((t) => t.id === taskId)
+    const task = tasks.find((t: Task) => t.id === taskId)
     if (!task) return
 
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)))
+    setTasks((prev: Task[]) => prev.map((t: Task) => (t.id === taskId ? { ...t, completed: true } : t)))
     setSelectedTask(null)
     hapticFeedback("medium")
 
-    setLeaderboard((prev) =>
-      prev.map((user) =>
+    setLeaderboard((prev: LeaderboardUser[]) =>
+      prev.map((user: LeaderboardUser) =>
         user.name === "You"
           ? {
               ...user,
@@ -721,7 +727,7 @@ export default function DustbinTracker() {
 
   const getLocalityStats = () => {
     const total = dustbins.length
-    const needsAttention = dustbins.filter((bin) => bin.status === "full" || bin.status === "damaged").length
+    const needsAttention = dustbins.filter((bin: Dustbin) => bin.status === "full" || bin.status === "damaged").length
     return { total, needsAttention }
   }
 
@@ -752,7 +758,7 @@ export default function DustbinTracker() {
     const deltaX = e.clientX - dragStart.x
     const deltaY = e.clientY - dragStart.y
 
-    setMapCenter((prev) => ({
+    setMapCenter((prev: { lat: number; lng: number }) => ({
       lat: prev.lat + deltaY * 0.0001,
       lng: prev.lng - deltaX * 0.0001,
     }))
@@ -778,7 +784,7 @@ export default function DustbinTracker() {
     const deltaX = touch.clientX - touchStartRef.current.x
     const deltaY = touch.clientY - touchStartRef.current.y
 
-    setMapCenter((prev) => ({
+    setMapCenter((prev: { lat: number; lng: number }) => ({
       lat: prev.lat + deltaY * 0.0001,
       lng: prev.lng - deltaX * 0.0001,
     }))
@@ -792,8 +798,8 @@ export default function DustbinTracker() {
   }
 
   const stats = getLocalityStats()
-  const currentUser = leaderboard.find((user) => user.name === "You")
-  const completedTasks = tasks.filter((task) => task.completed).length
+  const currentUser = leaderboard.find((user: LeaderboardUser) => user.name === "You")
+  const completedTasks = tasks.filter((task: Task) => task.completed).length
   const totalEarnings = currentUser?.earnings || 0
 
   const LoginForm = () => (
@@ -1019,6 +1025,16 @@ export default function DustbinTracker() {
                 variant="outline"
                 onClick={() => {
                   setMap(null)
+                  // Remove existing script and reload
+                  const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
+                  if (existingScript) {
+                    existingScript.remove()
+                  }
+                  // Clear the callback
+                  if (window.initGoogleMap) {
+                    delete window.initGoogleMap
+                  }
+                  // Reload the page to retry
                   window.location.reload()
                 }}
                 className="mt-4 rounded-xl border-[#005031] text-[#005031] hover:bg-[#005031] hover:text-white"
